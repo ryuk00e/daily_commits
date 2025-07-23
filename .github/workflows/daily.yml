@@ -1,0 +1,30 @@
+name: Daily File Update
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'  # Runs every 10 minutes
+  workflow_dispatch:
+
+jobs:
+  update-file:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Update file
+        run: |
+          echo "Last updated: $(date -u +%s%N)" > daily-update.txt
+
+      - name: Set up Git identity
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: Commit and Push changes
+        run: |
+          git add daily-update.txt
+          git commit -m "Auto update: $(date -u)" || echo "⚠ Nothing to commit"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git push origin HEAD:main
